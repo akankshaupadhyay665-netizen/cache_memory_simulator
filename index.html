@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CacheLab | Computer Architecture Cache Memory Simulator</title>
+  <meta name="description" content="Interactive Computer Organization and Architecture (COA) Cache Memory Simulator for B.Tech CSE AI & ML. Direct, Set Associative, and Fully Associative mapping with FIFO, LRU, 3C miss classification, and AMAT performance analytics.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- TOPBAR NAVIGATION -->
+  <header class="topbar">
+    <div class="brand-wrapper">
+      <div class="brand" id="brand">⚡ CacheLab</div>
+      <span class="brand-badge">Arch Studio</span>
+    </div>
+
+    <nav aria-label="Main Navigation">
+      <a href="#simulator" class="nav-link">Simulator</a>
+      <a href="#memoryFlowPanel" class="nav-link">Memory Flow</a>
+      <a href="#cacheState" class="nav-link">Cache Table</a>
+      <a href="#binaryPanel" class="nav-link">Binary Address</a>
+      <a href="#analysisPanel" class="nav-link">Step Analysis</a>
+      <a href="#performancePanel" class="nav-link">Performance</a>
+      <a href="#theory" class="nav-link">COA Theory</a>
+      <a href="#projectInfo" class="nav-link">Project Info</a>
+    </nav>
+
+    <div class="topbar-status">
+      <span class="status-indicator"></span>
+      <span class="status" id="systemStatus">System Ready</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- HERO / ACADEMIC PROJECT BANNER -->
+    <section class="hero">
+      <div class="hero-header">
+        <div class="eyebrow">
+          <span class="badge-academic">B.TECH CSE (AI &amp; ML) MINI-PROJECT</span>
+          <span class="badge-course">COURSE: COMPUTER ORGANIZATION &amp; ARCHITECTURE</span>
+        </div>
+        <h1>Cache Memory <span>Architecture Simulator</span></h1>
+        <p class="hero-description">
+          An interactive engineering workbench to simulate, visualize, and analyze L1/L2 cache memory mapping techniques, address bit slicing, replacement policies, and memory hierarchy performance with cycle-accurate calculations.
+        </p>
+      </div>
+
+      <div class="hero-tags">
+        <span class="tech-pill">Direct Mapping</span>
+        <span class="tech-pill">Set-Associative</span>
+        <span class="tech-pill">Fully Associative</span>
+        <span class="tech-pill">FIFO / LRU / LFU</span>
+        <span class="tech-pill">3C Miss Model</span>
+        <span class="tech-pill">AMAT Analysis</span>
+      </div>
+    </section>
+
+    <!-- PERFORMANCE METRICS DASHBOARD -->
+    <section class="stats-grid" id="stats" title="Performance Statistics">
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">Total Accesses</span>
+          <span class="stat-icon">🔄</span>
+        </div>
+        <h2 id="total">0</h2>
+        <span class="stat-hint">Memory read requests</span>
+      </div>
+
+      <div class="stat-card hit-card">
+        <div class="stat-header">
+          <span class="stat-label">Cache Hits</span>
+          <span class="stat-icon">✓</span>
+        </div>
+        <h2 class="green" id="hits">0</h2>
+        <span class="stat-hint">Found in L1 cache</span>
+      </div>
+
+      <div class="stat-card miss-card">
+        <div class="stat-header">
+          <span class="stat-label">Cache Misses</span>
+          <span class="stat-icon">✕</span>
+        </div>
+        <h2 class="red" id="misses">0</h2>
+        <span class="stat-hint">Fetched from Main Memory</span>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">Hit Ratio</span>
+          <span class="stat-icon">🎯</span>
+        </div>
+        <h2 id="hitRatio">0%</h2>
+        <span class="stat-hint">Efficiency metric (Hits / Total)</span>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">Miss Ratio</span>
+          <span class="stat-icon">📉</span>
+        </div>
+        <h2 id="missRatio" class="red-text">0%</h2>
+        <span class="stat-hint">Miss penalty factor (Misses / Total)</span>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">AMAT (Cycles)</span>
+          <span class="stat-icon">⏱️</span>
+        </div>
+        <h2 id="amatMetric">0.0</h2>
+        <span class="stat-hint">Avg Memory Access Time</span>
+      </div>
+    </section>
+
+    <!-- SIMULATION CONTROL PANEL -->
+    <section class="panel" id="simulator">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-icon">⚙️</span>
+          <div>
+            <h2>Simulation Configuration &amp; Controls</h2>
+            <p class="panel-subtitle">Configure cache architecture parameters and submit memory accesses</p>
+          </div>
+        </div>
+        <div class="panel-actions">
+          <span id="configSummaryBadge" class="tag tag-outline">8 Lines • 1 Word/Block • Direct</span>
+        </div>
+      </div>
+
+      <!-- HARDWARE CONFIGURATION GRID -->
+      <div class="controls">
+        <label>
+          <span class="label-text">Cache Lines (Capacity)</span>
+          <select id="cacheSize">
+            <option value="4">4 Lines (Small Cache)</option>
+            <option value="8" selected>8 Lines (Standard)</option>
+            <option value="16">16 Lines (Expanded)</option>
+            <option value="32">32 Lines (High Capacity)</option>
+          </select>
+        </label>
+
+        <label>
+          <span class="label-text">Block Size (Words per Block)</span>
+          <select id="blockSize">
+            <option value="1" selected>1 Word (Fine Grain)</option>
+            <option value="2">2 Words (Spatial Locality)</option>
+            <option value="4">4 Words (Standard Line)</option>
+            <option value="8">8 Words (High Locality)</option>
+          </select>
+        </label>
+
+        <label>
+          <span class="label-text">Mapping Technique</span>
+          <select id="mapping">
+            <option value="direct" selected>Direct Mapping</option>
+            <option value="associative">Fully Associative</option>
+            <option value="set">Set Associative</option>
+          </select>
+        </label>
+
+        <label id="waysControl" hidden>
+          <span class="label-text">Ways per Set (Associativity)</span>
+          <select id="ways">
+            <option value="2" selected>2-Way Associative</option>
+            <option value="4">4-Way Associative</option>
+            <option value="8">8-Way Associative</option>
+          </select>
+        </label>
+
+        <label>
+          <span class="label-text">Replacement Policy</span>
+          <select id="policy">
+            <option value="FIFO" selected>FIFO (First-In, First-Out)</option>
+            <option value="LRU">LRU (Least Recently Used)</option>
+            <option value="LFU">LFU (Least Frequently Used)</option>
+          </select>
+        </label>
+
+        <label>
+          <span class="label-text">Latency Profile (AMAT)</span>
+          <select id="latencyProfile">
+            <option value="1,20" selected>L1 Hit: 1 cycle | RAM Miss: 20 cycles</option>
+            <option value="1,50">L1 Hit: 1 cycle | RAM Miss: 50 cycles</option>
+            <option value="2,100">L2 Hit: 2 cycles | RAM Miss: 100 cycles</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- PRESET EDUCATIONAL BENCHMARKS -->
+      <div class="preset-section">
+        <span class="preset-label">🎓 Academic Demonstration Presets:</span>
+        <div class="preset-buttons">
+          <button type="button" class="preset-btn" data-preset="spatial" title="Demonstrates spatial locality with block size = 4">
+            📦 Spatial Locality
+          </button>
+          <button type="button" class="preset-btn" data-preset="temporal" title="Demonstrates temporal locality with repeated address access">
+            🔁 Temporal Locality
+          </button>
+          <button type="button" class="preset-btn" data-preset="conflict" title="Demonstrates direct-mapped conflict thrashing">
+            ⚡ Direct Thrashing
+          </button>
+          <button type="button" class="preset-btn" data-preset="setresolve" title="Demonstrates how Set-Associative eliminates conflict thrashing">
+            🛡️ Set-Assoc Resolution
+          </button>
+          <button type="button" class="preset-btn" data-preset="policytest" title="Demonstrates LRU vs FIFO eviction decisions">
+            ⚖️ LRU vs FIFO Eviction
+          </button>
+        </div>
+      </div>
+
+      <!-- SINGLE ADDRESS ACCESS -->
+      <div class="input-card">
+        <div class="address-input">
+          <label for="address">
+            <span class="label-title">Single Word Memory Address</span>
+            <span class="label-desc">Enter decimal (e.g. <code>12</code>, <code>45</code>) or hex (e.g. <code>0x0C</code>, <code>0x2D</code>)</span>
+          </label>
+          <div class="input-action-group">
+            <input id="address" type="text" placeholder="e.g. 12 or 0x0C" autocomplete="off" spellcheck="false">
+            <button id="accessBtn" class="btn-primary">Access Memory →</button>
+            <button id="randomBtn" class="btn-secondary" title="Generate random address">🎲 Random</button>
+            <button id="resetBtn" class="btn-danger">Reset All</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEQUENCE SIMULATION -->
+      <div class="input-card sequence-card">
+        <div class="address-input sequence">
+          <label for="sequence">
+            <span class="label-title">Memory Access Trace / Sequence</span>
+            <span class="label-desc">Comma-separated memory word addresses to simulate step-by-step</span>
+          </label>
+          <input id="sequence" placeholder="e.g. 0, 1, 2, 0, 4, 1, 8, 4, 12, 0" spellcheck="false">
+          
+          <div class="sequence-toolbar">
+            <div class="sequence-btn-group">
+              <button id="loadBtn" class="btn-primary">Load Sequence</button>
+              <button id="nextBtn" class="btn-secondary">Step Next →</button>
+              <button id="autoPlayBtn" class="btn-secondary">▶ Auto Play</button>
+            </div>
+            
+            <div class="sequence-speed-control">
+              <label for="playSpeed">Speed:</label>
+              <select id="playSpeed" class="select-compact">
+                <option value="1500">Slow (1.5s)</option>
+                <option value="900" selected>Normal (0.9s)</option>
+                <option value="400">Fast (0.4s)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="sequence-status-bar">
+          <span class="status-dot"></span>
+          <p id="sequenceStatus" class="muted">No sequence loaded. Enter addresses or choose a preset above.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- LATEST ACCESS RESULT & FEEDBACK -->
+    <section class="panel result-panel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-icon">📢</span>
+          <div>
+            <h2>Latest Access Result &amp; Hit Rate Monitor</h2>
+            <p class="panel-subtitle">Instant architectural diagnosis of the latest memory transaction</p>
+          </div>
+        </div>
+        <div id="resultBadge" class="result-badge-idle">WAITING</div>
+      </div>
+
+      <div id="result" class="result-box">
+        Enter a memory address or load a trace sequence above to begin simulation.
+      </div>
+
+      <div class="progress-area">
+        <div class="progress-label">
+          <div class="progress-title-wrap">
+            <span class="progress-dot"></span>
+            <strong>Cumulative Hit Rate</strong>
+          </div>
+          <span id="hitPercent" class="progress-value">0.00%</span>
+        </div>
+        <div class="progress-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+          <div id="progressBar"></div>
+        </div>
+        <div class="progress-markers">
+          <span>0%</span>
+          <span>25%</span>
+          <span>50% (Standard Benchmark Target)</span>
+          <span>75%</span>
+          <span>100%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- HARDWARE DATA FLOW (CPU - CACHE - MAIN MEMORY) -->
+    <section class="panel" id="memoryFlowPanel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-icon">⚡</span>
+          <div>
+            <h2>CPU – L1 Cache – Main Memory Interconnect Flow</h2>
+            <p class="panel-subtitle">Real-time bus transactions and data path visualization during memory requests</p>
+          </div>
+        </div>
+        <span class="tag tag-cyan">Bus Protocol: Read-Allocate</span>
+      </div>
+
+      <!-- Keep id="memory" and id="cacheStatus" for strict existing compatibility -->
+      <div id="memory" class="legacy-memory-ref" style="display:none;">
+        <span id="cacheStatus">Waiting for access</span>
+      </div>
+
+      <div id="memoryFlowContent">
+        <div class="flow-placeholder">
+          <div class="flow-placeholder-icon">🖥️ ⟷ ⚡ ⟷ 💾</div>
+          <p>Access a memory address to activate the hardware data flow animation and bus transaction monitor.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CACHE MEMORY TABLE & LINE ALLOCATION -->
+    <section class="panel" id="cacheState">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-icon">🗄️</span>
+          <div>
+            <h2>Active Cache Memory State</h2>
+            <p class="panel-subtitle">Contents of cache lines, validity bits, stored tags, memory blocks, and age timestamps</p>
+          </div>
+        </div>
+        <div class="cache-header-tags">
+          <span id="mappingLabel" class="tag">Direct Mapping</span>
+          <span id="cacheCapacityLabel" class="tag tag-secondary">8 Words Total</span>
+        </div>
+      </div>
+
+      <div class="cache-legend">
+        <span class="legend-item"><span class="legend-swatch hit-swatch"></span> Active Hit Line</span>
+        <span class="legend-item"><span class="legend-swatch miss-swatch"></span> Allocated / Replaced Line</span>
+        <span class="legend-item"><span class="legend-swatch candidate-swatch"></span> Candidate Set Line</span>
+        <span class="legend-item"><span class="legend-swatch valid-swatch"></span> Valid Block</span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="cache-data-table">
+          <thead>
+            <tr>
+              <th>Line</th>
+              <th>Set #</th>
+              <th>Valid</th>
+              <th>Stored Tag</th>
+              <th>Memory Block</th>
+              <th>Stored Words</th>
+              <th>Policy Metadata</th>
+              <th>Line Status</th>
+            </tr>
+          </thead>
+          <tbody id="cacheTable">
+            <!-- Dynamically populated by renderCacheTable() -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- BINARY MEMORY ADDRESS VISUALIZATION -->
+    <section class="panel" id="binaryPanel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-icon">🔢</span>
+          <div>
+            <h2>Binary Address Slicing &amp; Field Decomposition</h2>
+            <p class="panel-subtitle">Visual register breakdown showing Tag, Index, and Block Offset bit allocation</p>
+          </div>
+        </div>
+        <span class="tag tag-purple">Hardware Address Register</span>
+      </div>
+
+      <div id="binaryContent">
+        <div class="analysis-placeholder">
+          Access a memory address to inspect its binary bit slicing across Tag, Index, and Offset fields.
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP-BY-STEP CACHE ANALYSIS -->
+    <section class="panel" id="analysisPanel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-icon">🔍</span>
+          <div>
+            <h2>Step-by-Step Architectural Execution Trace</h2>
+            <p class="panel-subtitle">Detailed mathematical derivation and control-unit decision log for the memory access</p>
+          </div>
+        </div>
+        <span class="tag tag-emerald">Cycle-Accurate Trace</span>
+      </div>
+
+      <div id="analysisContent" class="analysis-content">
+        <div class="analysis-placeholder">
+          Submit a memory address to view the complete 7-step architectural derivation.
+        </div>
+      </div>
+    </section>
+
+    <!-- PERFORMANCE ANALYTICS & MAPPING COMPARISON -->
+    <section class="panel" id="performancePanel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-icon">📊</span>
+          <div>
+            <h2>Performance Analytics &amp; Mapping Comparison</h2>
+            <p class="panel-subtitle">Evaluate cache efficiency, 3C miss distribution, and comparative benchmark results</p>
+          </div>
+        </div>
+        <button id="compareMappingsBtn" class="btn-primary btn-sm">⚡ Compare All Mapping Schemes</button>
+      </div>
+
+      <div class="analytics-grid">
+        <!-- HIT / MISS DISTRIBUTION -->
+        <div class="analytics-card">
+          <h3>Hit vs. Miss Distribution</h3>
+          <div class="ratio-bar-wrap">
+            <div class="ratio-bar">
+              <div id="ratioHitBar" class="ratio-segment hit-segment" style="width: 50%;">Hits</div>
+              <div id="ratioMissBar" class="ratio-segment miss-segment" style="width: 50%;">Misses</div>
+            </div>
+            <div class="ratio-legend">
+              <span class="ratio-legend-item"><span class="dot green-dot"></span> Hits: <strong id="ratioHitText">0 (0%)</strong></span>
+              <span class="ratio-legend-item"><span class="dot red-dot"></span> Misses: <strong id="ratioMissText">0 (0%)</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3C MISS TAXONOMY BREAKDOWN -->
+        <div class="analytics-card">
+          <h3>The 3 C's Miss Taxonomy (Hennessy &amp; Patterson)</h3>
+          <div class="miss-breakdown">
+            <div class="miss-metric">
+              <div class="miss-badge compulsory-badge">Compulsory (Cold)</div>
+              <strong id="compulsoryCount">0</strong>
+              <small>First-time block accesses</small>
+            </div>
+            <div class="miss-metric">
+              <div class="miss-badge conflict-badge">Conflict (Collision)</div>
+              <strong id="conflictCount">0</strong>
+              <small>Lines mapped to same set</small>
+            </div>
+            <div class="miss-metric">
+              <div class="miss-badge capacity-badge">Capacity (Exhaustion)</div>
+              <strong id="capacityCount">0</strong>
+              <small>Cache fully occupied</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- AMAT & EFFECTIVE SPEEDUP -->
+        <div class="analytics-card">
+          <h3>Memory System Latency (AMAT)</h3>
+          <div class="amat-summary">
+            <div class="amat-equation">
+              <code>AMAT = Hit Time + (Miss Rate × Miss Penalty)</code>
+            </div>
+            <div class="amat-values" id="amatBreakdown">
+              1.0 + (0.00 × 20.0) = <strong>1.00 cycles</strong>
+            </div>
+            <div class="speedup-note" id="speedupNote">
+              Uncached memory baseline: 20 cycles
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPARATIVE MAPPING BENCHMARK MODAL / PANEL -->
+      <div id="comparisonContainer" class="comparison-container" style="display:none;">
+        <div class="comparison-header">
+          <h3>Cross-Mapping Scheme Performance Comparison</h3>
+          <span class="tag tag-purple">Evaluated on current trace sequence</span>
+        </div>
+        <p class="muted">
+          Compares Direct Mapping, 2-Way Set-Associative, 4-Way Set-Associative, and Fully Associative mapping on the current memory trace sequence using current line and block size settings.
+        </p>
+
+        <div class="table-wrap">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>Mapping Technique</th>
+                <th>Associativity</th>
+                <th>Total Sets</th>
+                <th>Hits</th>
+                <th>Misses</th>
+                <th>Hit Ratio</th>
+                <th>Conflict Misses</th>
+                <th>AMAT (Cycles)</th>
+                <th>Comparative Hit Rate</th>
+              </tr>
+            </thead>
+            <tbody id="comparisonTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SIMULATION ACCESS HISTORY -->
+    <section class="panel" id="historySection">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-icon">📜</span>
+          <div>
+            <h2>Simulation Access History Log</h2>
+            <p class="panel-subtitle">Sequential audit log of all CPU memory requests and architectural events</p>
+          </div>
+        </div>
+        <div class="panel-actions">
+          <button id="exportCsvBtn" class="btn-secondary btn-sm" title="Export simulation history to CSV">📥 Export CSV</button>
+          <button id="clearHistoryBtn" class="btn-secondary btn-sm" title="Clear history log">🗑️ Clear History</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="history-data-table">
+          <thead>
+            <tr>
+              <th>Access #</th>
+              <th>Address (Dec / Hex)</th>
+              <th>Block</th>
+              <th>Offset</th>
+              <th>Set / Line</th>
+              <th>Result</th>
+              <th>Miss Classification</th>
+              <th>Policy</th>
+              <th>Victim / Replaced</th>
+            </tr>
+          </thead>
+          <tbody id="historyTable">
+            <!-- Dynamically populated by renderHistory() -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- COA THEORETICAL FOUNDATION / LEARN COA -->
+    <section class="panel" id="theory">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-icon">📚</span>
+          <div>
+            <h2>Computer Organization &amp; Architecture Reference</h2>
+            <p class="panel-subtitle">Fundamental COA concepts, formulas, mapping rules, and design trade-offs</p>
+          </div>
+        </div>
+        <span class="tag tag-indigo">Syllabus Reference</span>
+      </div>
+
+      <div class="theory-grid">
+        <article class="theory-card">
+          <div class="theory-header">
+            <span class="theory-icon">🎯</span>
+            <h3>Cache Hit vs. Cache Miss</h3>
+          </div>
+          <p>
+            A <strong>Cache Hit</strong> occurs when the processor requests a word and its tag matches an entry in the designated cache set/line with a valid bit of 1. Data is serviced in <em>Hit Time</em>. A <strong>Cache Miss</strong> triggers a main memory read stall where the entire block is fetched across the bus into cache with a <em>Miss Penalty</em>.
+          </p>
+          <div class="theory-formula">Hit Ratio = Hits / (Hits + Misses)</div>
+        </article>
+
+        <article class="theory-card">
+          <div class="theory-header">
+            <span class="theory-icon">📌</span>
+            <h3>Direct Mapping</h3>
+          </div>
+          <p>
+            Each memory block maps to exactly one cache line determined by <code>Line = Block mod CacheLines</code>.
+          </p>
+          <ul>
+            <li><strong>Pros:</strong> Simplest hardware, single comparator, lowest hit latency.</li>
+            <li><strong>Cons:</strong> Vulnerable to severe <em>conflict thrashing</em> when multiple active blocks map to the same line.</li>
+          </ul>
+          <div class="theory-formula">Line = Block % Lines | Tag = ⌊Block / Lines⌋</div>
+        </article>
+
+        <article class="theory-card">
+          <div class="theory-header">
+            <span class="theory-icon">🔀</span>
+            <h3>Set-Associative Mapping</h3>
+          </div>
+          <p>
+            The cache is partitioned into <code>S = Lines / Ways</code> sets. Each memory block maps to a set: <code>Set = Block mod S</code>, and can reside in any of the <em>K</em> ways within that set.
+          </p>
+          <ul>
+            <li><strong>Pros:</strong> Significantly reduces conflict misses without the extreme comparator cost of fully associative caches.</li>
+            <li><strong>Cons:</strong> Requires K parallel comparators and replacement logic.</li>
+          </ul>
+          <div class="theory-formula">Set = Block % (Lines / Ways)</div>
+        </article>
+
+        <article class="theory-card">
+          <div class="theory-header">
+            <span class="theory-icon">🌐</span>
+            <h3>Fully Associative Mapping</h3>
+          </div>
+          <p>
+            A memory block can be placed in <em>any</em> cache line. There is no index field; the entire block number acts as the Tag.
+          </p>
+          <ul>
+            <li><strong>Pros:</strong> Zero conflict misses; optimal cache line utilization.</li>
+            <li><strong>Cons:</strong> Requires N parallel comparators (where N = cache lines), making it expensive for large caches. Common in small TLBs.</li>
+          </ul>
+          <div class="theory-formula">Tag = Block | Search All Lines in Parallel</div>
+        </article>
+
+        <article class="theory-card">
+          <div class="theory-header">
+            <span class="theory-icon">⏱️</span>
+            <h3>Replacement Policies</h3>
+          </div>
+          <p>
+            When a candidate set is full upon a miss, a replacement algorithm determines the victim block:
+          </p>
+          <ul>
+            <li><strong>FIFO (First-In, First-Out):</strong> Replaces the block that has resided in cache longest, regardless of recent access frequency.</li>
+            <li><strong>LRU (Least Recently Used):</strong> Replaces the block whose most recent access timestamp is oldest. Exploits temporal locality.</li>
+            <li><strong>LFU (Least Frequently Used):</strong> Replaces the line with minimum access counter.</li>
+          </ul>
+        </article>
+
+        <article class="theory-card">
+          <div class="theory-header">
+            <span class="theory-icon">📐</span>
+            <h3>The 3 C's Miss Model &amp; AMAT</h3>
+          </div>
+          <p>
+            <strong>Compulsory (Cold):</strong> First access to a block; unavoidable.<br>
+            <strong>Capacity:</strong> Cache cannot contain all working set blocks.<br>
+            <strong>Conflict (Collision):</strong> Multiple blocks compete for the same set in direct or set-associative caches.<br>
+            <strong>AMAT (Average Memory Access Time):</strong>
+          </p>
+          <div class="theory-formula">AMAT = Hit Time + (Miss Rate × Miss Penalty)</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- PROJECT INFORMATION & ACADEMIC CREDENTIALS -->
+    <section class="panel academic-info-panel" id="projectInfo">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-icon">🏛️</span>
+          <div>
+            <h2>Project Information &amp; Academic Credentials</h2>
+            <p class="panel-subtitle">Engineering curriculum details, syllabus alignment, and implementation specifics</p>
+          </div>
+        </div>
+        <span class="tag tag-emerald">Verified Academic Submission</span>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-block">
+          <h3>Project Title</h3>
+          <p><strong>CacheLab: Interactive Computer Architecture Cache Memory Simulator</strong></p>
+          <p class="muted">Cycle-accurate visualization of L1 cache mapping, address bit decomposition, replacement algorithms, and memory hierarchy performance.</p>
+        </div>
+
+        <div class="info-block">
+          <h3>Academic Program</h3>
+          <p><strong>Bachelor of Technology (B.Tech)</strong></p>
+          <p>Computer Science and Engineering (Artificial Intelligence and Machine Learning)</p>
+          <p class="muted">Department of Computer Science &amp; Engineering</p>
+        </div>
+
+        <div class="info-block">
+          <h3>Curriculum Subject</h3>
+          <p><strong>Computer Organization and Architecture (COA)</strong></p>
+          <p class="muted">Key Syllabus Topics: Memory Hierarchy, Cache Organization, Mapping Functions (Direct, Associative, Set-Associative), Replacement Policies (FIFO, LRU), Principle of Locality, AMAT.</p>
+        </div>
+
+        <div class="info-block">
+          <h3>Technical Implementation</h3>
+          <p><strong>Zero-Dependency Full-Stack Web Architecture</strong></p>
+          <p class="muted">HTML5 Semantic Canvas/SVG, Modern CSS3 Flexbox/Grid with CSS Custom Properties, Vanilla JavaScript (ES6+ Strict Mode). Works offline in university laboratory environments.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+      <div class="footer-top">
+        <div class="footer-brand">⚡ CacheLab Architecture Studio</div>
+        <p class="footer-text">
+          Developed for B.Tech Computer Science &amp; Engineering (AI &amp; ML) • Computer Organization &amp; Architecture Mini-Project
+        </p>
+      </div>
+      <div class="footer-bottom">
+        <span>Academic Year 2026–2027</span>
+        <span>•</span>
+        <span>Standard COA Syllabus Compliant</span>
+        <span>•</span>
+        <span>Built with Semantic HTML5, CSS3 &amp; Modern Vanilla JavaScript</span>
+      </div>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
